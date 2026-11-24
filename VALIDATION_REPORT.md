@@ -21,3 +21,32 @@
 - Camera-on demo and final GitHub/Canvas submissions.
 
 **Interpretation:** A complete local smoke-test path has been exercised, but the submission is NOT academically complete until the real-data and real-deployment evidence is generated.
+
+## Final audio-v2 held-out test evaluation
+
+The final model was evaluated on 90 previously held-out MIMII
+industrial fan recordings, comprising 45 normal and 45 abnormal
+samples.
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 68.89% |
+| Precision | 69.77% |
+| Recall | 66.67% |
+| F1 score | 68.18% |
+| Balanced accuracy | 68.89% |
+| ROC AUC | 0.7353 |
+
+Confusion matrix (rows: actual normal, abnormal;
+columns: predicted normal, abnormal):
+
+[[32, 13], [15, 30]]
+
+Compared with audio-v1, audio-v2 maintained test accuracy
+at 68.89%, increased F1 from 67.44% to 68.18%, and
+decreased ROC AUC from 0.7457 to 0.7353.
+
+The evaluation uses real MIMII recordings. These results
+should not be interpreted as validated performance on
+other machine types or operating conditions.
+

@@ -1,0 +1,56 @@
+{
+  "evaluated_at_utc": "2026-11-24T22:35:23.303055+00:00",
+  "model_version": "audio-v2",
+  "dataset": "Real MIMII -6_dB_fan id_00",
+  "split": "original held-out test (not used for fitting or selection)",
+  "records": 90,
+  "normal_records": 45,
+  "abnormal_records": 45,
+  "test_metrics": {
+    "accuracy": 0.6888888888888889,
+    "precision": 0.6976744186046512,
+    "recall": 0.6666666666666666,
+    "f1": 0.6818181818181818,
+    "balanced_accuracy": 0.6888888888888889,
+    "loss": 0.5877941356368714,
+    "confusion_matrix": [
+      [
+        32,
+        13
+      ],
+      [
+        15,
+        30
+      ]
+    ],
+    "classification_report": {
+      "normal": {
+        "precision": 0.6808510638297872,
+        "recall": 0.7111111111111111,
+        "f1-score": 0.6956521739130435,
+        "support": 45.0
+      },
+      "abnormal": {
+        "precision": 0.6976744186046512,
+        "recall": 0.6666666666666666,
+        "f1-score": 0.6818181818181818,
+        "support": 45.0
+      },
+      "accuracy": 0.6888888888888889,
+      "macro avg": {
+        "precision": 0.6892627412172192,
+        "recall": 0.6888888888888889,
+        "f1-score": 0.6887351778656126,
+        "support": 90.0
+      },
+      "weighted avg": {
+        "precision": 0.6892627412172192,
+        "recall": 0.6888888888888889,
+        "f1-score": 0.6887351778656127,
+        "support": 90.0
+      }
+    },
+    "roc_auc": 0.7353086419753085
+  },
+  "note": "Evaluation only; existing model weights remain unchanged."
+}

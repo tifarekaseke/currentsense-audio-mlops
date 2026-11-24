@@ -222,3 +222,32 @@ Add the actual YouTube link here after recording: **PENDING**.
 - Locust documentation: https://docs.locust.io/
 
 **Academic integrity:** Confirm that all explanations match your actual executed experiments. Cite your original project and any dataset/code sources; do not report a synthetic smoke test as an industrial experiment, and do not report deployment or load test results that were not measured.
+
+## Final audio-v2 held-out test evaluation
+
+The final model was evaluated on 90 previously held-out MIMII
+industrial fan recordings, comprising 45 normal and 45 abnormal
+samples.
+
+| Metric | Result |
+|---|---:|
+| Accuracy | 68.89% |
+| Precision | 69.77% |
+| Recall | 66.67% |
+| F1 score | 68.18% |
+| Balanced accuracy | 68.89% |
+| ROC AUC | 0.7353 |
+
+Confusion matrix (rows: actual normal, abnormal;
+columns: predicted normal, abnormal):
+
+[[32, 13], [15, 30]]
+
+Compared with audio-v1, audio-v2 maintained test accuracy
+at 68.89%, increased F1 from 67.44% to 68.18%, and
+decreased ROC AUC from 0.7457 to 0.7353.
+
+The evaluation uses real MIMII recordings. These results
+should not be interpreted as validated performance on
+other machine types or operating conditions.
+
