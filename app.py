@@ -13,7 +13,7 @@ st.title('🎧 CurrentSense MLOps')
 st.caption('Industrial fan/motor condition screening | WAV audio | Cloud-ready prediction and retraining')
 
 def get(path):
-    r=requests.get(API+path,timeout=15)
+    r=requests.get(API+path,timeout=120)
     r.raise_for_status()
     return r.json()
 
@@ -119,3 +119,4 @@ with monitor_tab:
         st.write('Recent inference history')
         st.dataframe(pd.DataFrame(stats['recent_predictions']),use_container_width=True)
     st.caption('Use Locust and Docker replica comparisons for actual load and latency benchmarks.')
+
