@@ -1,0 +1,44 @@
+{
+  "sample_size": 420,
+  "counts": {
+    "normal": 210,
+    "abnormal": 210
+  },
+  "feature_stats": {
+    "rms_mean": {
+      "abnormal": {
+        "mean": 0.0108,
+        "std": 0.0015
+      },
+      "normal": {
+        "mean": 0.0097,
+        "std": 0.0007
+      }
+    },
+    "spectral_centroid_mean": {
+      "abnormal": {
+        "mean": 1192.0301,
+        "std": 300.2676
+      },
+      "normal": {
+        "mean": 1300.0683,
+        "std": 378.6543
+      }
+    },
+    "zero_crossing_rate_mean": {
+      "abnormal": {
+        "mean": 0.068,
+        "std": 0.0283
+      },
+      "normal": {
+        "mean": 0.0836,
+        "std": 0.0411
+      }
+    }
+  },
+  "interpretations": {
+    "rms_mean": "Average audio energy; compare loudness of normal and abnormal recordings without assuming loudness diagnoses a fault.",
+    "spectral_centroid_mean": "Frequency-weighted spectral center; higher values generally mean relatively more high-frequency energy.",
+    "zero_crossing_rate_mean": "Rate of waveform sign changes; may reflect differences in high-frequency or noisy components."
+  }
+}
