@@ -1,189 +1,553 @@
-CurrentSense Audio MLOps
-Industrial fan condition screening from WAV recordings
-FastAPI · Streamlit · scikit-learn · SQLite · Docker · Nginx · Locust
+# CurrentSense Audio MLOps
 
-Author: Tifare Kaseke
-Repository: https://github.com/tifarekaseke/currentsense-audio-mlops
-Live application and video
-Resource	Link
-Public Streamlit dashboard	https://currentsense-audio-mlops.streamlit.app/
-FastAPI interactive documentation	https://currentsense-audio-mlops.onrender.com/docs
-API health and active model version	https://currentsense-audio-mlops.onrender.com/health
-Video Demonstration	(https://youtu.be/sDzIfruq-Fk) : 
-The video demonstrates the real MIMII audio dataset, preprocessing,
-model training, evaluation, cloud prediction, labeled audio uploads,
-model retraining, Docker scaling, Locust load testing, and cloud deployment.
+### Industrial Machine Condition Classification Using Audio and Machine Learning
+
+**Author:** Tifare Kaseke
+
+**Project:** Machine Learning Operations (MLOps) Summative Assignment
+
+**Technologies:** Python · scikit-learn · FastAPI · Streamlit · SQLite · Docker · Nginx · Locust · Render
+
+---
+
+## Video Demonstration
+
+**[▶ Watch the Full Project Demonstration on YouTube](https://youtu.be/sDzIfruq-Fk)**
+
+The video demonstrates the dataset, preprocessing, model training, evaluation, live predictions, additional data uploads, model retraining, Docker scaling, Locust performance testing and cloud deployment.
+
+## Live Application
+
+| Resource | Link |
+|---|---|
+| **Streamlit Dashboard** | [Launch CurrentSense](https://currentsense-audio-mlops.streamlit.app/) |
+| **FastAPI Documentation** | [Explore API Endpoints](https://currentsense-audio-mlops.onrender.com/docs) |
+| **API Health Check** | [View Model Status](https://currentsense-audio-mlops.onrender.com/health) |
+| **GitHub Repository** | [Source Code](https://github.com/tifarekaseke/currentsense-audio-mlops) |
+
+The application uses a Streamlit frontend connected to a FastAPI inference service deployed on Render.
+
+**Active deployed model:** `audio-v2`
+
+> **Note:** The public application supports audio predictions. Administrative data uploads and retraining are demonstrated in the local environment. Free cloud services may experience startup delays after inactivity.
+
+---
+
+## 1. Project Overview
+
+CurrentSense is an end-to-end Machine Learning Operations application designed to classify industrial fan audio recordings into two operating conditions:
+
+- **Normal:** Audio associated with normal machine operation.
+- **Abnormal:** Audio associated with an abnormal machine operating condition.
+
+Industrial machines can produce different acoustic patterns when their operating conditions change. CurrentSense uses machine learning to analyze these patterns and support experimental condition monitoring.
+
+This project extends an earlier motor-condition classification study that used numerical sensor features. The MLOps implementation introduces **non-tabular WAV audio data** and incorporates model deployment, monitoring, additional training data collection, retraining and performance testing.
+
+### Project Objectives
+
+1. Build a reproducible audio preprocessing and classification pipeline.
+2. Train, evaluate and save a machine learning model.
+3. Provide a user-friendly interface for individual WAV predictions.
+4. Support uploading multiple new labeled audio recordings into a database.
+5. Enable user-triggered retraining of an existing model.
+6. Deploy the application using FastAPI, Streamlit and Docker.
+7. Evaluate performance under concurrent requests using Locust.
+8. Deploy the inference application to the cloud.
+
+---
+
+## 2. Dataset
+
+**Dataset:** MIMII — Sound Dataset for Malfunctioning Industrial Machine Investigation and Inspection.
+
+**Source:** [MIMII Dataset on Zenodo](https://zenodo.org/records/3384388)
+
+The experiment uses real industrial fan recordings from the `-6_dB_fan` subset, machine ID `id_00`.
+
+### Dataset Distribution
+
+| Dataset Split | Normal | Abnormal | Total |
+|---|---:|---:|---:|
+| Training | 210 | 210 | 420 |
+| Validation | 45 | 45 | 90 |
+| Testing | 45 | 45 | 90 |
+| **Total** | **300** | **300** | **600** |
+
+The dataset was divided at recording level, with balanced labels across the three splits.
+
+All 600 prepared training, validation and test recordings were verified against the original MIMII WAV files.
+
+Ten additional real recordings, consisting of five normal and five abnormal samples, were used separately to demonstrate the retraining workflow.
+
+**Important:** Raw WAV recordings are excluded from GitHub because of their size. The repository includes the dataset preparation script and instructions for reproducing the experiment.
+
+---
+
+## 3. Audio Preprocessing and Feature Engineering
+
+Raw audio is converted into a consistent numerical representation before classification.
+
+The preprocessing workflow includes:
+
+1. WAV decoding and conversion to mono audio.
+2. Resampling to 16 kHz.
+3. Processing recordings of up to ten seconds.
+4. Acoustic feature extraction.
+5. Feature standardization using training data statistics.
+
+### Extracted Features
+
+The pipeline extracts **52 acoustic features** from each recording.
+
+| Feature | Description |
+|---|---|
+| MFCCs | Capture spectral characteristics of audio |
+| RMS Energy | Measures audio signal intensity |
+| Spectral Centroid | Estimates the center of spectral energy |
+| Spectral Bandwidth | Measures spectral spread |
+| Spectral Rolloff | Describes the frequency distribution |
+| Spectral Flatness | Measures noise-like spectral characteristics |
+| Zero-Crossing Rate | Measures how frequently the waveform changes sign |
+
+The notebook includes audio waveform visualizations and feature distribution comparisons for normal and abnormal recordings.
+
+All three feature matrices contain 52 columns, and no missing or infinite feature values were identified.
+
+---
+
+## 4. Machine Learning Model
+
+The classifier is implemented using **scikit-learn's Multilayer Perceptron (MLP)**.
+
+### Model Configuration
+
+| Component | Configuration |
+|---|---|
+| Algorithm | Multilayer Perceptron |
+| Hidden layers | 64 and 32 neurons |
+| Optimizer | Adam |
+| Input dimensions | 52 features |
+| Target classes | Normal and abnormal |
+| Feature scaling | StandardScaler |
+| Regularization | L2 |
+| Training control | Validation-based early stopping |
+| Model format | Pickle (`.pkl`) |
+
+A dummy baseline classifier was also evaluated and achieved 50% test accuracy.
+
+The trained model is saved at:
+
+`models/current_sense_audio.pkl`
+
+### Final Model Evaluation
+
+The final `audio-v2` model was evaluated on 90 held-out MIMII recordings.
+
+| Evaluation Metric | audio-v1 | audio-v2 |
+|---|---:|---:|
+| Test Accuracy | 68.89% | 68.89% |
+| Test Precision | 70.73% | 69.77% |
+| Test Recall | 64.44% | 66.67% |
+| Test F1 Score | 67.44% | 68.18% |
+| Test ROC AUC | 0.7457 | 0.7353 |
+
+**Final audio-v2 confusion matrix:**
+
+| Actual / Predicted | Normal | Abnormal |
+|---|---:|---:|
+| Normal | 32 | 13 |
+| Abnormal | 15 | 30 |
+
+The final model correctly classified **62 out of 90 test recordings**.
+
+Retraining maintained the original test accuracy while slightly improving the F1 score. ROC AUC decreased slightly.
+
+These results are experimental and do not establish reliability for unseen machines or real-world fault diagnosis.
+
+Supporting files:
+
+- `outputs/evaluation_audio_v2_test.json`
+- `outputs/confusion_matrix_audio_v2_test.png`
+- `outputs/audio_v2_test_predictions.csv`
+
+---
+
+## 5. Application Architecture
+
+The application implements the following workflow:
+
+```text
+                   WAV Audio Recording
+                           |
+                           v
+                   Streamlit Dashboard
+                           |
+                           v
+                     FastAPI Service
+                           |
+                           v
+                 Audio Feature Extraction
+                           |
+                           v
+                 Saved MLP Model (audio-v2)
+                           |
+                           v
+                 Prediction + Confidence
+                           |
+                           v
+                 Monitoring / SQLite Logs
 
 
-Deployment status (25 November 2026): The FastAPI inference API is deployed on Render and the Streamlit dashboard is deployed on Streamlit Community Cloud. The public API has been verified to load audio-v2, and a real abnormal MIMII WAV recording was successfully classified through the public dashboard. The cloud deployment is intended for inference. Administrative labeled-data uploads and retraining are demonstrated locally; no public retraining access is intended.
-Overview
-CurrentSense is a machine-condition monitoring research prototype that classifies recordings of an industrial fan as normal or abnormal. A user uploads a WAV file to Streamlit, which sends it to FastAPI and displays the predicted class, confidence, model version, response latency, and selected acoustic features.
+Administrative Retraining Workflow:
 
-The project also implements labeled bulk audio upload, SQLite records for prediction and training jobs, and an administrative retraining workflow that updates an existing saved model. It extends an earlier CurrentSense project that used 48 numerical current-signal features and 11 anonymized classes. The audio experiment is a different classification task, so accuracy figures from the earlier work are not directly comparable.
-Implemented components
-- WAV decoding, resampling, acoustic feature extraction and real-data train/validation/test preparation.
-- A saved scikit-learn multilayer perceptron (MLP) binary classifier.
-- FastAPI inference, health checks, prediction statistics, labeled upload, retraining jobs and verified-label feedback endpoints.
-- Streamlit prediction interface, dataset insights, acoustic feature visualizations and monitoring; administrative workflows are used locally.
-- SQLite prediction and upload metadata; Docker Compose with an Nginx gateway and scalable API replicas.
-- Locust load tests with real WAV payloads, covering one, two and three API containers.
-- Public cloud inference API on Render and dashboard on Streamlit Community Cloud.
-Dataset and preparation
-Source: MIMII dataset, Purohit et al. (2019). The experiment used the extracted -6_dB_fan recordings from machine ID id_00, with the dataset's normal/abnormal labels.
-Split	Normal	Abnormal	Total	Purpose
-Training	210	210	420	Model fitting
-Validation	45	45	90	Model selection and retraining acceptance
-Held-out test	45	45	90	Final performance measurement
-Total	300	300	600	Real MIMII recordings
+New Labeled WAV Recordings
+            |
+            v
+     Bulk Upload API
+            |
+            v
+      SQLite Storage
+            |
+            v
+    Trigger Retraining
+            |
+            v
+  Update Existing MLP Model
+            |
+            v
+    Validation Evaluation
+            |
+            v
+    Updated Model Version
+```
 
+### Main Components
 
-An additional 10 previously unused real WAV files (five normal and five abnormal) were uploaded through the application for the retraining demonstration. They were distinct from the 600-file train/validation/test split. The preparation process was checked against the original extracted MIMII recordings, and the data split contains exact copies of the source WAV files. The separate data/fixture/ folder contains synthetic software-smoke-test recordings and is not used for real-model performance reporting.
+**FastAPI:** Prediction endpoints, health checks, data uploads, retraining, job status and monitoring.
 
-Raw WAV files, uploaded recordings and local SQLite data are not committed to the repository. To reproduce the data preparation after downloading and extracting the MIMII fan archive, run from the project root:
-python scripts/prepare_mimii.py --source "C:\PATH\TO\-6_dB_fan" --machine-id id_00 --max-per-class 300
-python -m src.model --data-root data
-Only use the preparation script's --overwrite flag when you intentionally want to replace an existing prepared dataset. The script produces a local dataset manifest with split information and source checksums.
+**Streamlit:** Interactive dashboard for WAV predictions, visualizations, model information and local administrative operations.
 
-Scientific limitations: The splitting procedure separates recordings, not independent machines or recording sessions. The results therefore do not establish generalization to unseen machines or types of mechanical faults. A normal/abnormal prediction is not a certified diagnosis.
-Machine learning workflow
-Real MIMII WAV audio (normal / abnormal)
-    → Decode, convert to mono, resample to 16 kHz, use up to 10 seconds
-    → Extract 52 acoustic features
-    → Fit StandardScaler on training data only
-    → Train MLP classifier with hidden layers (64, 32)
-    → Validation-based early stopping and evaluation
-    → Save classifier + scaler
-    → FastAPI inference → Streamlit UI and SQLite monitoring
-    → Optional local administrative upload + continuing model training
-The 52 acoustic features comprise 20 MFCCs summarized by mean and standard deviation (40 numbers), and six additional audio descriptors summarized by mean and standard deviation (12 numbers): RMS energy, spectral centroid, spectral bandwidth, spectral rolloff, spectral flatness and zero-crossing rate. The MLP uses Adam optimization, L2 regularization and validation-based early stopping. The notebook includes waveform exploration, three acoustic-feature comparisons, baseline prediction, model evaluation, a confusion matrix and training-history visualizations.
-Measured model results
-Held-out test results: audio-v1 and audio-v2
-Both versions were evaluated against the same 90 held-out real MIMII WAV files.
-Test metric	Initial audio-v1	Retrained audio-v2
-Accuracy	68.89%	68.89%
-Precision, abnormal class	70.73%	69.77%
-Recall, abnormal class	64.44%	66.67%
-F1, abnormal class	67.44%	68.18%
-Balanced accuracy	68.89%	68.89%
-ROC AUC	0.7457	0.7353
+**SQLite:** Stores prediction records, additional labeled recordings, feedback and retraining job information.
 
+**Docker:** Packages application services into reproducible containers.
 
-The audio-v2 held-out confusion matrix (rows = actual normal, abnormal; columns = predicted normal, abnormal) is:
-[[32, 13],
- [15, 30]]
-This corresponds to 62 correct predictions out of 90. Retraining maintained accuracy and slightly improved the abnormal-class F1 score, but ROC AUC decreased. It would be inaccurate to claim that the retrained model improved every evaluation metric.
-Retraining job: validation metrics
-Ten previously unused and correctly labeled recordings were added through the local application. The retraining job completed successfully, incorporated the new samples, and updated the serving version to audio-v2. Its separate validation scores were:
-Validation metric, audio-v2	Value
-Accuracy	71.11%
-Precision, abnormal class	73.17%
-Recall, abnormal class	66.67%
-F1, abnormal class	69.77%
-ROC AUC	0.7472
+**Nginx:** Routes requests and distributes traffic across API replicas.
 
+**Locust:** Simulates concurrent users making audio prediction requests.
 
-These validation scores are not the final test scores. The independent audio-v2 test evaluation is recorded in outputs/evaluation_audio_v2_test.json, outputs/audio_v2_test_predictions.csv and outputs/confusion_matrix_audio_v2_test.png. The original outputs/evaluation.json may contain the audio-v1 training run; verify model version before citing it.
+---
 
-One held-out abnormal recording, id_00_00000008.wav, was correctly classified as abnormal with 95.5% confidence by the deployed audio-v2 model. This confidence is for that individual prediction, not overall classification accuracy.
-Run locally
-Requirements: Python 3.11, dependencies from requirements.txt, and a saved real-data model at models/current_sense_audio.pkl. For retraining or complete data-reproduction workflows, prepare the source MIMII recordings as described above.
+## 6. Additional Data Upload and Model Retraining
+
+CurrentSense supports updating the existing trained classifier when additional labeled recordings become available.
+
+During the implementation:
+
+- Ten additional real MIMII recordings were uploaded.
+- Five recordings were labeled normal.
+- Five recordings were labeled abnormal.
+- Upload information was stored in SQLite.
+- A retraining job was triggered from the dashboard.
+- The trained model was updated from `audio-v1` to `audio-v2`.
+
+### Retraining Results
+
+| Metric | Result |
+|---|---:|
+| New labeled recordings | 10 |
+| Updated model version | `audio-v2` |
+| Validation accuracy | 71.11% |
+| Validation F1 score | 69.77% |
+| Job outcome | Completed successfully |
+
+The retraining process continues fitting the existing classifier using the new labeled data and evaluates the resulting model before accepting the update.
+
+**Note:** The retraining validation results are separate from the final held-out test evaluation.
+
+Administrative retraining is disabled on the public cloud service and is demonstrated locally.
+
+---
+
+## 7. Running the Project Locally
+
+### Prerequisites
+
+- Python 3.11
+- Git
+- Conda or another Python virtual environment
+- Docker Desktop for containerized deployment
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/tifarekaseke/currentsense-audio-mlops.git
+cd currentsense-audio-mlops
+```
+
+### Install Dependencies
+
+```bash
 conda create -n currentsense-mlops python=3.11 -y
 conda activate currentsense-mlops
 python -m pip install -r requirements.txt
-Run the API in terminal A:
-conda activate currentsense-mlops
-$env:ADMIN_TOKEN = "REPLACE_WITH_YOUR_PRIVATE_LOCAL_TOKEN"
+```
+
+### Prepare the MIMII Dataset
+
+Download and extract the fan recordings from the MIMII dataset.
+
+From the repository root:
+
+```bash
+python scripts/prepare_mimii.py --source "PATH_TO_EXTRACTED_-6_dB_fan" --machine-id id_00 --max-per-class 300
+```
+
+Train the initial model:
+
+```bash
+python -m src.model --data-root data
+```
+
+**Note:** Training the initial model writes the saved model file. Back up the existing `audio-v2` model before deliberately retraining it.
+
+### Start FastAPI
+
+In the first terminal:
+
+```bash
 python -m uvicorn api:app --port 8000
-Run the Streamlit dashboard in terminal B, using the same private token only for your trusted local administration demo:
-conda activate currentsense-mlops
-$env:ADMIN_TOKEN = "REPLACE_WITH_YOUR_PRIVATE_LOCAL_TOKEN"
-$env:API_URL = "http://localhost:8000"
+```
+
+### Start Streamlit
+
+In a second terminal:
+
+```bash
 python -m streamlit run app.py
-- Local dashboard: http://localhost:8501
-- Local FastAPI docs: http://localhost:8000/docs
-- Local health check: http://localhost:8000/health
-Verify the active model:
-Invoke-RestMethod "http://localhost:8000/health" | Format-List
-Expect status: online, model_loaded: True and the saved model's version. Do not expose the administrator token in a public Streamlit app.
-API reference
-Method	Endpoint	Purpose
-GET	/health	Service status, uptime, loaded model and version
-POST	/predict	Upload a single WAV and obtain a prediction
-POST	/upload	Save multiple labeled WAV recordings
-POST	/retrain	Trigger existing-model retraining
-GET	/jobs/{job_id}	Check retraining job state and evaluation summary
-GET	/stats	Request statistics and inference latency information
-POST	/feedback	Attach a verified label to a stored prediction
+```
 
+Local interfaces:
 
-Administrative endpoints require X-Admin-Token, configured using the private ADMIN_TOKEN environment variable. The public inference deployment should not expose administrative controls or secrets.
-Docker and horizontal scaling
-Create a private .env from .env.example, configure a secret ADMIN_TOKEN, and ensure the trained model exists. The Docker Compose configuration mounts local models, data and outputs, rather than adding private WAV files or databases to the image.
-Copy-Item .env.example .env
-# Edit .env and provide a private ADMIN_TOKEN
+- Streamlit: http://localhost:8501
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
 
+For local administrative functions, configure a private `ADMIN_TOKEN` consistently for the API and dashboard.
+
+Never commit administrator credentials or the `.env` file.
+
+---
+
+## 8. Docker Deployment
+
+The project includes a `Dockerfile`, Docker Compose configuration and an Nginx gateway.
+
+Create a private `.env` file from the provided example and configure the administrator token.
+
+Start the services:
+
+```bash
 docker compose up -d --build
+```
+
+Check the running containers:
+
+```bash
 docker compose ps
-Invoke-RestMethod "http://localhost:8000/health" | Format-List
-The Compose services are api (FastAPI), gateway (Nginx) and ui (Streamlit). The gateway publishes port 8000; the UI publishes port 8501. To change replica count:
+```
+
+Scale the FastAPI service to two replicas:
+
+```bash
 docker compose up -d --scale api=2
 docker compose restart gateway
-# Or increase to three replicas:
+```
+
+Scale to three replicas:
+
+```bash
 docker compose up -d --scale api=3
 docker compose restart gateway
-docker compose ps
-Nginx logs showed successful /predict responses from api-1, api-2 and api-3 during the three-replica run. Replicas share local storage and a model file in this prototype; avoid initiating retraining while multiple inference replicas serve traffic. A production system would need coordinated model rollout, durable storage, dedicated retraining workers and stronger access controls.
-Locust flood-request simulation
-Load tests submitted real WAV files through the Nginx gateway using 10 concurrent Locust users, 2 users/second spawn rate, and a 60-second run time. The original results are retained in outputs/.
-python -m locust -f locustfile.py --headless --host http://localhost:8000 --users 10 --spawn-rate 2 --run-time 60s --csv outputs/locust_1container_10users_threaded --only-summary
-After scaling to two or three API replicas, repeat using a different CSV output prefix. Warm up the replicas and use consistent sample WAV, user count, run duration and timeout for comparable tests.
+```
 
-Successful 10-user runs
-API replicas	Completed requests	Failure rate	Mean latency	P95 latency	Throughput
-1	65	0%	7,595 ms	12,000 ms	1.12 req/s
-2	263	0%	1,516 ms	2,700 ms	4.45 req/s
-3	263	0%	1,469 ms	2,700 ms	4.64 req/s
+The Nginx gateway distributes prediction traffic between available API containers.
 
+**Important:** Retraining should not be initiated during multi-replica inference benchmarking because the prototype shares local model files and SQLite storage.
 
-In these local runs, increasing replicas improved throughput and reduced mean response time, with diminishing gains from two to three. The three-replica maximum observed latency (9.46 seconds) exceeded the successful two-replica maximum (3.20 seconds), despite similar P95 performance. These are workstation measurements, not guarantees of cloud capacity.
+---
 
-Failures and test variability: An earlier two-container test recorded 19 requests, 10 failures (52.63%), 22.57 seconds mean latency and 0.32 req/s. A three-user test and a later ten-user repeat succeeded without failures. The exact reason for the earlier failure was not proven; warm-up and resource contention are possible contributing factors. An initial one-container test also timed out before a worker-thread concurrency change. Reporting both passing and failing runs is necessary for an honest performance assessment.
-Monitoring and model limitations
-The dashboard displays service uptime, request and prediction information, inference latency and audio-feature insights. RMS describes signal energy, spectral centroid summarizes frequency-weighted spectral energy and zero-crossing rate describes sign-change activity. These values alone do not prove a mechanical fault.
+## 9. Locust Load Testing
 
-The /feedback endpoint can record independently verified labels. HTTP 200 and model confidence indicate successful inference and the classifier's output, not ground-truth correctness. The observed held-out test accuracy is 68.89%; the system is a research prototype and has not been validated across independent machines, sites or operating conditions.
+Locust was used to evaluate the system under concurrent WAV prediction requests.
 
-Cloud hosting limitation: The free hosting services have resource constraints and may start slowly after inactivity. Their local files or databases are not suitable for durable public retraining records. The validated public workflow is inference, with local administrative retraining used for the assessment demonstration.
-Repository structure
-.
-├── api.py
+### Test Configuration
+
+| Parameter | Value |
+|---|---|
+| Concurrent users | 10 |
+| Spawn rate | 2 users/second |
+| Test duration | 60 seconds |
+| Endpoint | `POST /predict` |
+| Payload | WAV audio recording |
+| Configurations | 1, 2 and 3 API replicas |
+
+### Recorded Performance
+
+| Metric | 1 Replica | 2 Replicas | 3 Replicas |
+|---|---:|---:|---:|
+| Requests | 65 | 263 | 263 |
+| Failed requests | 0 | 0 | 0 |
+| Average response time | 7.60 s | 1.52 s | 1.47 s |
+| P95 response time | 12.0 s | 2.7 s | 2.7 s |
+| Throughput | 1.12 req/s | 4.45 req/s | 4.64 req/s |
+
+### Interpretation
+
+In the successful experiments, increasing from one to two API replicas improved prediction throughput substantially and reduced average latency.
+
+Scaling from two to three replicas produced a smaller improvement, indicating diminishing returns under this workload.
+
+An earlier two-replica run recorded a 52.63% failure rate due to request timeouts. A subsequent warmed-up run completed without failures. The exact cause of the earlier failures was not conclusively established.
+
+These results reflect local workstation testing and should not be interpreted as guaranteed cloud performance.
+
+### Reproduce a Locust Test
+
+```bash
+python -m locust -f locustfile.py --headless --host http://localhost:8000 --users 10 --spawn-rate 2 --run-time 60s --csv outputs/locust_results --only-summary
+```
+
+The original experimental results are available in the `outputs/` directory.
+
+---
+
+## 10. Cloud Deployment and Monitoring
+
+CurrentSense has two publicly deployed components.
+
+**Backend:** FastAPI hosted on Render.
+
+https://currentsense-audio-mlops.onrender.com/docs
+
+**Frontend:** Streamlit hosted on Streamlit Community Cloud.
+
+https://currentsense-audio-mlops.streamlit.app/
+
+The deployed backend exposes a health endpoint that reports:
+
+- API availability
+- Server uptime
+- Model loading status
+- Active model version
+
+The public deployment was verified to load `audio-v2` and produce real WAV predictions.
+
+The system also records prediction metadata and latency for basic monitoring.
+
+**Cloud limitations:** Free hosting resources can introduce cold-start delays, temporary storage limitations and lower performance under heavy traffic. Public administrative retraining remains disabled.
+
+---
+
+## 11. API Endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/health` | API status, uptime and model version |
+| POST | `/predict` | Predict a single WAV recording |
+| POST | `/upload` | Upload labeled recordings |
+| POST | `/retrain` | Trigger model retraining |
+| GET | `/jobs/{job_id}` | Check retraining job status |
+| GET | `/stats` | Retrieve monitoring statistics |
+| POST | `/feedback` | Submit verified prediction feedback |
+
+Administrative endpoints require an administrator token.
+
+Interactive API documentation is available at:
+
+https://currentsense-audio-mlops.onrender.com/docs
+
+---
+
+## 12. Repository Structure
+
+```text
+currentsense-audio-mlops/
+│
 ├── app.py
-├── locustfile.py
+├── api.py
+├── requirements.txt
 ├── Dockerfile
 ├── docker-compose.yml
-├── nginx/default.conf
-├── requirements.txt
-├── .env.example
-├── notebook/currentsense_audio_mlops.ipynb
+├── locustfile.py
+├── README.md
+│
+├── notebook/
+│   └── currentsense_audio_mlops.ipynb
+│
 ├── src/
 │   ├── preprocessing.py
 │   ├── model.py
 │   ├── prediction.py
 │   └── database.py
+│
 ├── scripts/
 │   ├── prepare_mimii.py
 │   ├── evaluate_audio_v2.py
-│   ├── make_synthetic_smoke_data.py
-│   ├── benchmark_summary.py
-│   └── run_load_tests.sh
+│   └── benchmark_summary.py
+│
+├── models/
+│   └── current_sense_audio.pkl
+│
+├── nginx/
+│   └── default.conf
+│
 ├── tests/
-├── models/current_sense_audio.pkl
+│
 └── outputs/
-The raw WAV dataset, uploaded training audio, SQLite files, private .env and model backups are excluded from version control. The synthetic data script is intended for software smoke testing, not for reporting model accuracy.
+    ├── evaluation_audio_v2_test.json
+    ├── confusion_matrix_audio_v2_test.png
+    └── scaling_comparison.csv
+```
 
+The raw dataset, uploaded audio, local databases, private credentials and model backup files are intentionally excluded from version control.
 
-References
-- Purohit, H., et al. (2019). MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation and Inspection. Zenodo, DOI 10.5281/zenodo.3384388.
-- Purohit, H., et al. (2019). MIMII Dataset. arXiv:1909.09347.
-- Locust documentation.
-- Docker Compose documentation.
+---
+
+## 13. Limitations and Future Improvements
+
+CurrentSense demonstrates a functioning MLOps pipeline, but several improvements remain possible:
+
+- Improve classification accuracy using larger and more diverse audio datasets.
+- Evaluate models on unseen machine IDs and recording sessions.
+- Investigate convolutional or other deep learning architectures for audio classification.
+- Improve the detection of abnormal recordings to reduce false negatives.
+- Use durable cloud storage and a dedicated retraining worker.
+- Extend monitoring to include data drift and production model performance.
+- Perform repeated load tests under controlled cloud infrastructure.
+
+The current classifier is intended for research and educational demonstration, not certified industrial fault diagnosis.
+
+---
+
+## 14. References
+
+**MIMII Dataset:** Purohit, H., et al. (2019). *MIMII Dataset: Sound Dataset for Malfunctioning Industrial Machine Investigation and Inspection.* [Zenodo](https://doi.org/10.5281/zenodo.3384388).
+
+**Locust Documentation:** https://docs.locust.io/
+
+**Docker Documentation:** https://docs.docker.com/
+
+**FastAPI Documentation:** https://fastapi.tiangolo.com/
+
+**Streamlit Documentation:** https://docs.streamlit.io/
+
+---
+
+### Author
+
+**Tifare Kaseke**
+
+*CurrentSense Audio MLOps — Machine Learning Operations Summative Project*
+
+**[Live Application](https://currentsense-audio-mlops.streamlit.app/)** · **[Video Demonstration](https://youtu.be/sDzIfruq-Fk)** · **[GitHub Repository](https://github.com/tifarekaseke/currentsense-audio-mlops)**
