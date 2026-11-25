@@ -9,7 +9,10 @@ Resource	Link
 Public Streamlit dashboard	https://currentsense-audio-mlops.streamlit.app/
 FastAPI interactive documentation	https://currentsense-audio-mlops.onrender.com/docs
 API health and active model version	https://currentsense-audio-mlops.onrender.com/health
-Camera-on YouTube demonstration	To be added after recording and uploading
+Video Demonstration	(https://youtu.be/sDzIfruq-Fk) : 
+The video demonstrates the real MIMII audio dataset, preprocessing,
+model training, evaluation, cloud prediction, labeled audio uploads,
+model retraining, Docker scaling, Locust load testing, and cloud deployment.
 
 
 Deployment status (25 November 2026): The FastAPI inference API is deployed on Render and the Streamlit dashboard is deployed on Streamlit Community Cloud. The public API has been verified to load audio-v2, and a real abnormal MIMII WAV recording was successfully classified through the public dashboard. The cloud deployment is intended for inference. Administrative labeled-data uploads and retraining are demonstrated locally; no public retraining access is intended.
